@@ -1,0 +1,67 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: rogue-privileged-template
+  annotations:
+    openshift.io/display-name: rogue-privileged-app
+    description: |-
+      An application to expoloit privileged access
+
+      WARNING: Do not use in a productio environment!
+      tags: quickstart
+objects:
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    annotations:
+      openshift.io/scc: privileged
+    labels:
+      app: "${APPLICATION_NAME}"
+    name: "${APPLICATION_NAME}"
+  spec:
+    replicas: 1
+    selector:
+      app: "${APPLICATION_NAME}"
+      deploymentconfig: "${APPLICATION_NAME}"
+    strategy:
+      type: Recreate
+    triggers:
+    - type: ConfigChange
+    template:
+      metadata:
+        labels:
+          app: "${APPLICATION_NAME}"
+          deploymentconfig: "${APPLICATION_NAME}"
+      spec:
+        serviceAccount: ${SERVICE_ACCOUNT}
+        serviceAccountName: ${SERVICE_ACCOUNT}
+        containers:
+          - name: "${APPLICATION_NAME}"
+            image: docker.io/vargadan/docker-enabled-jessie:latest
+            command: [ "/bin/netcat"]
+            args:
+              - "-l"
+              - "8080"
+            ports:
+              - containerPort: 8080
+            volumeMounts:
+                - name: docker-socket
+                  mountPath: /var/run/docker.sock
+            securityContext:
+                privileged: true
+        volumes:
+          - name: docker-socket
+            hostPath:
+               path: /var/run/docker.sock
+        hostNetwork: true
+        restartPolicy: Always
+parameters:
+- name: APPLICATION_NAME
+  displayName: Application Name
+  value: rogue-privileged-app
+  required: true
+- name: SERVICE_ACCOUNT
+  displayName: Service Account
+  description: The Service Account to run the pod as
+  value: privilegedserviceaccount
+  required: true

