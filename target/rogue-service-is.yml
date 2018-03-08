@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: List
+items:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: rogue-service
+  spec:
+    tags:
+    - from:
+        kind: ImageStreamImage
+        name: rogue-service@sha256:c76ac518e1ce417c96bdf36d2238aab8bd993840da4e1c59e8defb973ddb8945
+        namespace: evil-project
+      name: latest
